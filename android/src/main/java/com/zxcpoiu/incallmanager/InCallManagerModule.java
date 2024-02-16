@@ -16,6 +16,8 @@
 
 package com.zxcpoiu.incallmanager;
 
+import static android.media.AudioAttributes.USAGE_NOTIFICATION_RINGTONE;
+
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -33,6 +35,7 @@ import android.os.PowerManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.provider.Settings;
 import androidx.annotation.Nullable;
