@@ -1077,23 +1077,26 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
                             stopRingtone(); // --- use brandnew instance
                         }
                     }
+                    
+                    int ringMode = audioManager.getRingerMode();
+
+                    if (ringMode == AudioManager.RINGER_MODE_VIBRATE || ringMode == AudioManager.RINGER_MODE_NORMAL) {
+                        Log.d(TAG, "startRingtone(): start vibrating.");
+                        long[] pattern = {1000, 1000, 1000, 1000, 1000,1000, 1000, 1000, 1000, 1000,1000, 1000, 1000, 1000, 1000};
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                            vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1),
+                                    new AudioAttributes.Builder()
+                                            .setUsage(USAGE_NOTIFICATION_RINGTONE)
+                                            .build());
+                        } else {
+                            vibrator.vibrate(pattern, -1);
+                        }
+
+                        isVibrating = true;
+                    }
 
                     if (audioManager.getStreamVolume(AudioManager.STREAM_RING) == 0) {
                         Log.d(TAG, "startRingtone(): ringer is silent. leave without play.");
-                        if (audioManager.getStreamVolume(AudioManager.RINGER_MODE_VIBRATE) == 0) {
-                            Log.d(TAG, "startRingtone(): start vibrating.");
-                            long[] pattern = {1000, 1000, 1000, 1000, 1000,1000, 1000, 1000, 1000, 1000,1000, 1000, 1000, 1000, 1000};
-                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                                vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1),
-                                        new AudioAttributes.Builder()
-                                                .setUsage(USAGE_NOTIFICATION_RINGTONE)
-                                                .build());
-                            } else {
-                                vibrator.vibrate(pattern, -1);
-                            }
-
-                            isVibrating = true;
-                        }
 
                         return;
                     }
