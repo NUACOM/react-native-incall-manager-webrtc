@@ -33,6 +33,7 @@ import android.os.PowerManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.Vibrator;
 import android.provider.Settings;
 import androidx.annotation.Nullable;
 import android.util.Log;
@@ -90,6 +91,7 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
     private boolean automatic = true;
     private boolean isProximityRegistered = false;
     private boolean proximityIsNear = false;
+    private boolean isVibrating = false;
     private static final String ACTION_HEADSET_PLUG = (android.os.Build.VERSION.SDK_INT >= 21) ? AudioManager.ACTION_HEADSET_PLUG : Intent.ACTION_HEADSET_PLUG;
     private BroadcastReceiver wiredHeadsetReceiver;
     private BroadcastReceiver noisyAudioReceiver;
@@ -111,6 +113,7 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
     private MyPlayerInterface mBusytone;
     private Handler mRingtoneCountDownHandler;
     private String media = "audio";
+    private Vibrator vibrator;
 
     private static final String SPEAKERPHONE_AUTO = "auto";
     private static final String SPEAKERPHONE_TRUE = "true";
@@ -192,6 +195,7 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
         audioUriMap.put("bundleBusytoneUri", bundleBusytoneUri);
         wakeLockUtils = new InCallWakeLockUtils(reactContext);
         proximityManager = InCallProximityManager.create(reactContext, this);
+        vibrator = (Vibrator) reactContext.getSystemService(Context.VIBRATOR_SERVICE);
 
         UiThreadUtil.runOnUiThread(() -> {
             bluetoothManager = AppRTCBluetoothManager.create(reactContext, this);
@@ -1071,10 +1075,23 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
                         }
                     }
 
-                    //if (!audioManager.isStreamMute(AudioManager.STREAM_RING)) {
-                    //if (origRingerMode == AudioManager.RINGER_MODE_NORMAL) {
                     if (audioManager.getStreamVolume(AudioManager.STREAM_RING) == 0) {
                         Log.d(TAG, "startRingtone(): ringer is silent. leave without play.");
+                        if (audioManager.getStreamVolume(AudioManager.RINGER_MODE_VIBRATE) == 0) {
+                            long[] pattern = {1000, 1000, 1000, 1000, 1000,1000, 1000, 1000, 1000, 1000,1000, 1000, 1000, 1000, 1000};
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                                vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1),
+                                        new AudioAttributes.Builder()
+                                                .setUsage(USAGE_NOTIFICATION_RINGTONE)
+                                                .build());
+                            } else {
+                                Log.d(TAG, "startRingtone(): start vibrating.");
+                                vibrator.vibrate(pattern, -1);
+                            }
+
+                            isVibrating = true;
+                        }
+
                         return;
                     }
 
@@ -1146,6 +1163,11 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
                     if (mRingtoneCountDownHandler != null) {
                         mRingtoneCountDownHandler.removeCallbacksAndMessages(null);
                         mRingtoneCountDownHandler = null;
+                    }
+                    if (isVibrating) {
+                        Log.d(TAG, "stopRingtone(): stop vibrating.");
+                        vibrator.cancel();
+                        isVibrating = false;
                     }
                 } catch (Exception e) {
                     Log.d(TAG, "stopRingtone() failed");
