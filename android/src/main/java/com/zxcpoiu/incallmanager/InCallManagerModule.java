@@ -1081,6 +1081,7 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
                     if (audioManager.getStreamVolume(AudioManager.STREAM_RING) == 0) {
                         Log.d(TAG, "startRingtone(): ringer is silent. leave without play.");
                         if (audioManager.getStreamVolume(AudioManager.RINGER_MODE_VIBRATE) == 0) {
+                            Log.d(TAG, "startRingtone(): start vibrating.");
                             long[] pattern = {1000, 1000, 1000, 1000, 1000,1000, 1000, 1000, 1000, 1000,1000, 1000, 1000, 1000, 1000};
                             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                                 vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1),
@@ -1088,7 +1089,6 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
                                                 .setUsage(USAGE_NOTIFICATION_RINGTONE)
                                                 .build());
                             } else {
-                                Log.d(TAG, "startRingtone(): start vibrating.");
                                 vibrator.vibrate(pattern, -1);
                             }
 
